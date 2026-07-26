@@ -312,12 +312,71 @@
     letter-spacing: .04em; text-transform: uppercase;
   }
 
+  /* ---- plan / timeline ---- */
+  .timeline { display: grid; gap: 14px; }
+  .week {
+    display: grid; grid-template-columns: 132px 1fr; gap: 0;
+    border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+    background: var(--surface); box-shadow: var(--shadow);
+  }
+  .week-rail {
+    background: var(--accent-soft); padding: 20px 18px; border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .week-rail .wk-label {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--accent); font-weight: 600;
+  }
+  .week-rail .wk-no {
+    font-family: var(--font-display); font-size: 40px; line-height: 1; color: var(--accent-ink);
+    font-weight: 600; margin-top: 4px;
+  }
+  .week-body { padding: 18px 22px; }
+  .week-body h3 { font-size: 15.5px; margin-bottom: 12px; }
+  .week-body ul.clean li { margin-bottom: 8px; font-size: 14px; }
+
+  .afterbeta {
+    margin-top: 14px; display: grid; grid-template-columns: 132px 1fr; gap: 0;
+    border: 1px dashed var(--line-strong); border-radius: 14px; overflow: hidden;
+  }
+  .afterbeta .week-rail { background: var(--surface-2); border-right-style: dashed; }
+  .afterbeta .wk-no { color: var(--ink-soft); }
+  .afterbeta .wk-label { color: var(--muted); }
+  .afterbeta .week-body { padding: 18px 22px; }
+
+  .cost {
+    margin-top: 16px; display: grid; grid-template-columns: 1fr auto; align-items: center;
+    gap: 18px; padding: 22px 26px; border-radius: 14px;
+    background: var(--brass-soft); border: 1px solid var(--brass);
+  }
+  .cost .cost-label {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--brass); font-weight: 600; margin-bottom: 6px;
+  }
+  .cost .cost-desc { font-size: 14px; color: var(--ink-soft); margin: 0; max-width: 46ch; }
+  .cost .cost-num {
+    font-family: var(--font-display); font-size: clamp(30px, 5vw, 42px); font-weight: 600;
+    color: var(--ink); white-space: nowrap; text-align: right; line-height: 1;
+  }
+  .cost .cost-num small {
+    display: block; font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+    color: var(--muted); letter-spacing: .04em; margin-top: 6px; text-transform: none;
+  }
+
   @media (max-width: 680px) {
     .audience, .toggle-grid, .two { grid-template-columns: 1fr; }
     .stepper { grid-template-columns: 1fr 1fr; gap: 20px 0; }
     .step:nth-child(2)::after, .step:not(:last-child)::after { display: none; }
     .wf-row { grid-template-columns: 34px 1fr; }
     .wf-num { grid-column: 2; text-align: left; margin-top: 2px; }
+    .week, .afterbeta { grid-template-columns: 1fr; }
+    .week-rail, .afterbeta .week-rail {
+      flex-direction: row; align-items: baseline; gap: 10px;
+      border-right: none; border-bottom: 1px solid var(--line); padding: 14px 18px;
+    }
+    .week-rail .wk-no { font-size: 26px; }
+    .cost { grid-template-columns: 1fr; text-align: left; }
+    .cost .cost-num { text-align: left; }
   }
 </style>
 
@@ -634,6 +693,86 @@
             </div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- 07 PLAN & COSTS -->
+    <section id="plan">
+      <div class="sec-head">
+        <span class="sec-num">07</span>
+        <h2>Plan, timeline &amp; costs</h2>
+      </div>
+      <p class="sec-sub">Three weeks to a working beta we can all try, then a round of changes based on what we learn. Contentful stays the source of truth for base pricing throughout.</p>
+
+      <div class="timeline">
+        <div class="week">
+          <div class="week-rail">
+            <span class="wk-label">Week</span>
+            <span class="wk-no">1</span>
+          </div>
+          <div class="week-body">
+            <h3>Accounts &amp; invites — the foundation</h3>
+            <ul class="clean">
+              <li>Stand up the CRM and its database</li>
+              <li>Admin and team-member accounts (you’re the first admin)</li>
+              <li>Email invite flow: invite → client sets their own password → active</li>
+              <li>Forgot-password self-service</li>
+              <li>Track each client’s status (pending / active) and last login</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="week">
+          <div class="week-rail">
+            <span class="wk-label">Week</span>
+            <span class="wk-no">2</span>
+          </div>
+          <div class="week-body">
+            <h3>Pricing engine — the core</h3>
+            <ul class="clean">
+              <li>Tiers: create groups and assign clients to them</li>
+              <li>Tier-level discounts (e.g. “Gold = 15% off”)</li>
+              <li>Product Pricing screen pulling in every product published in Contentful, with per-product discounts that override the tier</li>
+              <li>The “show discount” toggle — off by default</li>
+              <li>Logged-out visitors see no pricing</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="week">
+          <div class="week-rail">
+            <span class="wk-label">Week</span>
+            <span class="wk-no">3</span>
+          </div>
+          <div class="week-body">
+            <h3>Client experience, inquiries &amp; polish</h3>
+            <ul class="clean">
+              <li>Real partner login on the live site, showing each client their own pricing</li>
+              <li>Inquiry flow: sends the email as today <em>and</em> logs into the CRM against that client</li>
+              <li>CRM client list and inquiry history</li>
+              <li>Testing, bug-fixing, and deploying the beta</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="afterbeta">
+        <div class="week-rail">
+          <span class="wk-label">Next</span>
+          <span class="wk-no">★</span>
+        </div>
+        <div class="week-body">
+          <h3 style="margin-bottom:6px;">After the beta — feedback round</h3>
+          <p style="margin:0;font-size:14px;color:var(--ink-soft);">We review the beta together, gather feedback, and implement the changes in a follow-up round before we call it done.</p>
+        </div>
+      </div>
+
+      <div class="cost">
+        <div>
+          <div class="cost-label">Ongoing running cost</div>
+          <p class="cost-desc">Hosting for the server and database that run the CRM and power the portal. One-off build work is separate from this monthly figure.</p>
+        </div>
+        <div class="cost-num">~$150<small>per month</small></div>
       </div>
     </section>
 
