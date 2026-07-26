@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOP Partner Portal — High-Level Design</title>
+</head>
+<body>
+<style>
+  :root {
+    --ground: #F7F5F1;
+    --surface: #FFFFFF;
+    --surface-2: #F0EDE7;
+    --ink: #1A1D20;
+    --ink-soft: #4A4F55;
+    --muted: #797F86;
+    --line: #DDD8CF;
+    --line-strong: #C9C3B7;
+    --accent: #1E5459;
+    --accent-ink: #143B3F;
+    --accent-soft: #DCE8E7;
+    --brass: #9A6B33;
+    --brass-soft: #EFE3D0;
+    --good: #3C7A56;
+    --good-soft: #DAEBE0;
+    --warn: #A9762A;
+    --warn-soft: #F1E4CC;
+    --shadow: 0 1px 2px rgba(26,29,32,.04), 0 8px 24px rgba(26,29,32,.06);
+
+    --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --font-sans: ui-sans-serif, -apple-system, 'Segoe UI', system-ui, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', 'Menlo', Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #131518;
+      --surface: #1B1E22;
+      --surface-2: #23272C;
+      --ink: #ECEAE4;
+      --ink-soft: #B8BCC1;
+      --muted: #878D94;
+      --line: #2C3036;
+      --line-strong: #3A3F46;
+      --accent: #5FB3B0;
+      --accent-ink: #9AD3CF;
+      --accent-soft: #1E3538;
+      --brass: #CDA060;
+      --brass-soft: #35291A;
+      --good: #6FC191;
+      --good-soft: #1C3227;
+      --warn: #D6A458;
+      --warn-soft: #352a17;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #F7F5F1; --surface: #FFFFFF; --surface-2: #F0EDE7;
+    --ink: #1A1D20; --ink-soft: #4A4F55; --muted: #797F86;
+    --line: #DDD8CF; --line-strong: #C9C3B7;
+    --accent: #1E5459; --accent-ink: #143B3F; --accent-soft: #DCE8E7;
+    --brass: #9A6B33; --brass-soft: #EFE3D0;
+    --good: #3C7A56; --good-soft: #DAEBE0; --warn: #A9762A; --warn-soft: #F1E4CC;
+    --shadow: 0 1px 2px rgba(26,29,32,.04), 0 8px 24px rgba(26,29,32,.06);
+  }
+  :root[data-theme="dark"] {
+    --ground: #131518; --surface: #1B1E22; --surface-2: #23272C;
+    --ink: #ECEAE4; --ink-soft: #B8BCC1; --muted: #878D94;
+    --line: #2C3036; --line-strong: #3A3F46;
+    --accent: #5FB3B0; --accent-ink: #9AD3CF; --accent-soft: #1E3538;
+    --brass: #CDA060; --brass-soft: #35291A;
+    --good: #6FC191; --good-soft: #1C3227; --warn: #D6A458; --warn-soft: #352a17;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .page {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: clamp(28px, 5vw, 64px) clamp(20px, 5vw, 48px) 80px;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 10px;
+    font-weight: 600;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(30px, 5.5vw, 46px);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0 0 16px;
+  }
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(22px, 3.4vw, 28px);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  h3 {
+    font-family: var(--font-sans);
+    font-weight: 650;
+    font-size: 16px;
+    letter-spacing: -0.005em;
+    margin: 0 0 6px;
+  }
+  p { margin: 0 0 14px; max-width: 68ch; color: var(--ink-soft); }
+  strong { color: var(--ink); font-weight: 650; }
+  .lead { font-size: clamp(17px, 2.4vw, 19px); color: var(--ink-soft); max-width: 60ch; }
+
+  /* ---- header ---- */
+  header.hero {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 30px;
+    margin-bottom: 44px;
+  }
+  .kicker-row {
+    display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: baseline;
+    justify-content: space-between; margin-bottom: 22px;
+  }
+  .doc-meta {
+    font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .audience {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 26px;
+  }
+  .aud-card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px 18px; box-shadow: var(--shadow);
+  }
+  .aud-card .tag {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--accent); font-weight: 600;
+  }
+  .aud-card h3 { margin: 6px 0 4px; }
+  .aud-card p { margin: 0; font-size: 14.5px; }
+
+  /* ---- section scaffolding ---- */
+  section { margin-top: 52px; scroll-margin-top: 20px; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+  .sec-num {
+    font-family: var(--font-mono); font-size: 13px; color: var(--brass);
+    font-weight: 600; letter-spacing: .05em; flex: none; padding-top: 4px;
+  }
+  .sec-sub { color: var(--muted); font-size: 14.5px; margin: 4px 0 22px; max-width: 64ch; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 14px; padding: clamp(18px, 3vw, 26px); box-shadow: var(--shadow);
+  }
+  .card + .card { margin-top: 16px; }
+
+  /* ---- flow diagram (big picture) ---- */
+  .bigpic { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  .node {
+    border: 1px solid var(--line-strong); border-radius: 12px; padding: 16px 18px;
+    background: var(--surface);
+  }
+  .node .role {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+  }
+  .node.contentful { border-color: var(--brass); background: var(--brass-soft); }
+  .node.contentful .role { color: var(--brass); }
+  .node.crm { border-left: 4px solid var(--accent); }
+  .node.site { border-left: 4px solid var(--good); }
+  .arrow {
+    text-align: center; color: var(--muted); font-family: var(--font-mono);
+    font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    position: relative;
+  }
+  .arrow span { background: var(--ground); padding: 0 12px; position: relative; z-index: 1; }
+  .arrow::before {
+    content: ""; position: absolute; left: 50%; top: -6px; bottom: -6px; width: 1px;
+    background: var(--line-strong); transform: translateX(-50%);
+  }
+
+  /* ---- price waterfall ---- */
+  .waterfall { display: grid; gap: 0; }
+  .wf-row {
+    display: grid; grid-template-columns: 40px 1fr auto; align-items: center;
+    gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line);
+  }
+  .wf-row:last-child { border-bottom: none; }
+  .wf-badge {
+    width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 14px;
+    background: var(--surface-2); color: var(--ink-soft); border: 1px solid var(--line);
+  }
+  .wf-row.base .wf-badge { background: var(--brass-soft); color: var(--brass); border-color: var(--brass); }
+  .wf-row.tier .wf-badge { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .wf-row.prod .wf-badge { background: var(--good-soft); color: var(--good); border-color: var(--good); }
+  .wf-label h3 { margin: 0 0 2px; }
+  .wf-label p { margin: 0; font-size: 13.5px; color: var(--muted); }
+  .wf-num {
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    font-size: 18px; font-weight: 600; text-align: right; white-space: nowrap;
+  }
+  .wf-num .was { display: block; font-size: 12px; color: var(--muted); text-decoration: line-through; font-weight: 400; }
+  .final .wf-num { color: var(--accent); font-size: 22px; }
+
+  .ruleline {
+    margin-top: 18px; padding: 14px 16px; border-radius: 10px;
+    background: var(--accent-soft); color: var(--accent-ink);
+    font-size: 14.5px; display: flex; gap: 10px; align-items: flex-start;
+  }
+  .ruleline b { font-weight: 700; }
+  .chip-flow { font-family: var(--font-mono); font-weight: 600; white-space: nowrap; }
+
+  /* ---- toggle mockups ---- */
+  .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pcard {
+    border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px;
+    background: var(--surface); position: relative;
+  }
+  .pcard .state {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .09em;
+    text-transform: uppercase; margin-bottom: 14px; display: inline-flex;
+    align-items: center; gap: 7px; color: var(--muted);
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .pcard.on .dot { background: var(--good); }
+  .pcard .pname { font-family: var(--font-display); font-size: 18px; margin-bottom: 10px; color: var(--ink); }
+  .price-now { font-family: var(--font-mono); font-size: 26px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .price-was { font-family: var(--font-mono); font-size: 15px; color: var(--muted); text-decoration: line-through; margin-right: 8px; }
+  .save-pill {
+    display: inline-block; margin-top: 10px; font-family: var(--font-mono);
+    font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+    background: var(--good-soft); color: var(--good);
+  }
+  .caption { font-size: 13px; color: var(--muted); margin-top: 10px; }
+
+  /* ---- invite stepper ---- */
+  .stepper { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 4px; }
+  .step { padding: 0 14px; position: relative; }
+  .step:not(:last-child)::after {
+    content: ""; position: absolute; top: 17px; right: -0px; width: 100%;
+    height: 2px; background: var(--line-strong); left: 50%; z-index: 0;
+  }
+  .step .num {
+    width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 14px; position: relative; z-index: 1;
+    background: var(--accent); color: #fff; margin-bottom: 10px;
+  }
+  :root[data-theme="dark"] .step .num, .step .num { color: #fff; }
+  @media (prefers-color-scheme: dark) { .step .num { color: #0b1416; } }
+  :root[data-theme="dark"] .step .num { color: #0b1416; }
+  :root[data-theme="light"] .step .num { color: #fff; }
+  .step h3 { font-size: 14.5px; margin-bottom: 3px; }
+  .step p { font-size: 13px; margin: 0; color: var(--muted); }
+
+  /* ---- status table ---- */
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; margin-top: 4px; }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+  thead th {
+    text-align: left; font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted); font-weight: 600;
+    padding: 12px 16px; background: var(--surface-2); border-bottom: 1px solid var(--line);
+  }
+  tbody td { padding: 12px 16px; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+  tbody tr:last-child td { border-bottom: none; }
+  td .name { color: var(--ink); font-weight: 600; }
+  .pill {
+    display: inline-block; font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    padding: 3px 9px; border-radius: 999px; letter-spacing: .03em; white-space: nowrap;
+  }
+  .pill.active { background: var(--good-soft); color: var(--good); }
+  .pill.pending { background: var(--warn-soft); color: var(--warn); }
+  .pill.tier { background: var(--accent-soft); color: var(--accent); }
+  .tabnum { font-variant-numeric: tabular-nums; }
+
+  /* ---- generic two-col ---- */
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  ul.clean { margin: 0; padding-left: 0; list-style: none; }
+  ul.clean li { position: relative; padding-left: 22px; margin-bottom: 9px; font-size: 14.5px; color: var(--ink-soft); }
+  ul.clean li::before {
+    content: ""; position: absolute; left: 2px; top: 9px; width: 7px; height: 7px;
+    border-radius: 2px; background: var(--accent);
+  }
+  ul.clean li strong { color: var(--ink); }
+
+  /* ---- open questions ---- */
+  .qcard { border-left: 3px solid var(--brass); background: var(--surface); }
+  .qgrid { display: grid; gap: 10px; }
+  .q { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; padding: 12px 0; border-bottom: 1px dashed var(--line); }
+  .q:last-child { border-bottom: none; }
+  .q .qmark { font-family: var(--font-mono); color: var(--brass); font-weight: 600; }
+  .q p { margin: 0; font-size: 14.5px; }
+
+  footer.foot {
+    margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--line);
+    font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+    letter-spacing: .04em; text-transform: uppercase;
+  }
+
+  @media (max-width: 680px) {
+    .audience, .toggle-grid, .two { grid-template-columns: 1fr; }
+    .stepper { grid-template-columns: 1fr 1fr; gap: 20px 0; }
+    .step:nth-child(2)::after, .step:not(:last-child)::after { display: none; }
+    .wf-row { grid-template-columns: 34px 1fr; }
+    .wf-num { grid-column: 2; text-align: left; margin-top: 2px; }
+  }
+</style>
+
+<div class="page">
+  <div class="wrap">
+
+    <header class="hero">
+      <div class="kicker-row">
+        <p class="eyebrow" style="margin:0;">Partner Portal &amp; CRM</p>
+        <span class="doc-meta">High-level design · v1 · for review</span>
+      </div>
+      <h1>A private portal for our trade partners, run from one internal CRM.</h1>
+      <p class="lead">Today the “partner login” in the footer goes nowhere. This plan gives approved clients a real account where they see <strong>their</strong> pricing — and gives our team one place to invite clients, group them, and set the discounts they see.</p>
+
+      <div class="audience">
+        <div class="aud-card">
+          <span class="tag">Our team</span>
+          <h3>Admins &amp; members</h3>
+          <p>Invite clients, sort them into tiers, set discounts, and watch inquiries come in — all from the CRM.</p>
+        </div>
+        <div class="aud-card">
+          <span class="tag">Our clients</span>
+          <h3>Trade partners</h3>
+          <p>Log in to the site, see pricing set for them, and inquire about products they’re interested in.</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- 01 BIG PICTURE -->
+    <section id="bigpicture">
+      <div class="sec-head">
+        <span class="sec-num">01</span>
+        <h2>The big picture</h2>
+      </div>
+      <p class="sec-sub">Three parts working together. Contentful stays the single source of truth for product prices — the CRM only layers discounts on top, and the website shows the result to the right person.</p>
+
+      <div class="card">
+        <div class="bigpic">
+          <div class="node contentful">
+            <div class="role">Source of truth · unchanged</div>
+            <h3>Contentful</h3>
+            <p style="margin:0;font-size:14px;">Holds every product and its <strong>base price</strong>. Nothing in the CRM ever rewrites these numbers.</p>
+          </div>
+          <div class="arrow"><span>base prices flow down ↓</span></div>
+          <div class="node crm">
+            <div class="role">Our control room</div>
+            <h3>The CRM</h3>
+            <p style="margin:0;font-size:14px;">Where we invite clients, group them into <strong>tiers</strong>, set <strong>discounts</strong>, flip the “show discount” switch, and read incoming inquiries.</p>
+          </div>
+          <div class="arrow"><span>who + what discount ↓</span></div>
+          <div class="node site">
+            <div class="role">What the client sees</div>
+            <h3>The website</h3>
+            <p style="margin:0;font-size:14px;">A logged-in partner sees <strong>their</strong> price and can send an inquiry — which lands straight back in the CRM. <strong>Logged-out visitors see no pricing at all.</strong></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 PRICING -->
+    <section id="pricing">
+      <div class="sec-head">
+        <span class="sec-num">02</span>
+        <h2>How pricing works</h2>
+      </div>
+      <p class="sec-sub">The heart of the system. A client’s price is built in three layers. Each layer can adjust the one above it — and the most specific rule always wins.</p>
+
+      <div class="card">
+        <p class="eyebrow" style="color:var(--muted);">Worked example · one sofa, one Gold-tier client</p>
+        <div class="waterfall">
+          <div class="wf-row base">
+            <div class="wf-badge">1</div>
+            <div class="wf-label">
+              <h3>Base price · from Contentful</h3>
+              <p>The list price of the product. Same for everyone until a discount applies.</p>
+            </div>
+            <div class="wf-num">$4,000</div>
+          </div>
+          <div class="wf-row tier">
+            <div class="wf-badge">2</div>
+            <div class="wf-label">
+              <h3>Tier discount · the client’s group</h3>
+              <p>This client is in the <strong>Gold</strong> tier — 15% off everything.</p>
+            </div>
+            <div class="wf-num"><span class="was">$4,000</span>$3,400</div>
+          </div>
+          <div class="wf-row prod final">
+            <div class="wf-badge">3</div>
+            <div class="wf-label">
+              <h3>Per-product discount · overrides the tier</h3>
+              <p>This sofa has its own 25% deal. It <strong>replaces</strong> the tier discount for this item.</p>
+            </div>
+            <div class="wf-num"><span class="was">$4,000</span>$3,000</div>
+          </div>
+        </div>
+
+        <div class="ruleline">
+          <span>◆</span>
+          <div><b>Rule of thumb:</b> the most specific discount wins &nbsp;—&nbsp;
+          <span class="chip-flow">Per-product&nbsp;›&nbsp;Tier&nbsp;›&nbsp;Base</span>.
+          A product-level deal isn’t added on top of the tier; it takes its place for that one product.</div>
+        </div>
+      </div>
+
+      <div class="two" style="margin-top:16px;">
+        <div class="card">
+          <span class="eyebrow">Option A</span>
+          <h3>Discount a whole tier</h3>
+          <p style="font-size:14.5px;">Set one percentage for a group of clients — “Gold gets 15% off.” Fast, and it applies across the catalogue. Good for relationship-based pricing.</p>
+        </div>
+        <div class="card">
+          <span class="eyebrow">Option B</span>
+          <h3>Discount a single product</h3>
+          <p style="font-size:14.5px;">Put a deal on one product that overrides whatever tier discount would apply. Good for clearing stock or a one-off promotion.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <span class="eyebrow">Where per-product pricing lives</span>
+        <h3 style="font-size:17px;margin-bottom:8px;">A dedicated Product Pricing section</h3>
+        <p style="font-size:14.5px;">The CRM has its own screen that lists <strong>every product published in Contentful</strong> — pulled in automatically, so the list is always current. Next to each product we can set an <strong>individual discount</strong>. Set one and it becomes that product’s per-product deal, overriding the tier discount for everyone. Leave it blank and the product simply follows each client’s tier. It’s the one place to see, at a glance, which products have their own pricing and which don’t.</p>
+
+        <div class="table-scroll" style="margin-top:14px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Product (from Contentful)</th>
+                <th class="tabnum">Base price</th>
+                <th class="tabnum">Per-product discount</th>
+                <th>Applies to</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="name">Aria Lounge Sofa</span></td>
+                <td class="tabnum">$4,000</td>
+                <td><span class="pill tier" style="background:var(--good-soft);color:var(--good);">25% off</span></td>
+                <td>Everyone (overrides tier)</td>
+              </tr>
+              <tr>
+                <td><span class="name">Meridian Dining Table</span></td>
+                <td class="tabnum">$2,600</td>
+                <td><span class="pill" style="background:var(--surface-2);color:var(--muted);">— none —</span></td>
+                <td>Follows each client’s tier</td>
+              </tr>
+              <tr>
+                <td><span class="name">Fielded Oak Credenza</span></td>
+                <td class="tabnum">$3,200</td>
+                <td><span class="pill tier" style="background:var(--good-soft);color:var(--good);">10% off</span></td>
+                <td>Everyone (overrides tier)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="caption" style="margin-top:12px;">A sketch of the Product Pricing screen — every published product in one list, each with an optional discount of its own.</p>
+      </div>
+    </section>
+
+    <!-- 03 VISIBILITY TOGGLE -->
+    <section id="visibility">
+      <div class="sec-head">
+        <span class="sec-num">03</span>
+        <h2>Showing the discount is a choice</h2>
+      </div>
+      <p class="sec-sub">By default the client just sees their (already lower) price — no “30% off” banner. When we want to make a deal feel like a deal, an admin flips a switch and the savings become visible.</p>
+
+      <div class="card">
+        <div class="toggle-grid">
+          <div class="pcard">
+            <span class="state"><span class="dot"></span>Show discount · OFF (default)</span>
+            <div class="pname">Aria Lounge Sofa</div>
+            <div><span class="price-now">$3,000</span></div>
+            <p class="caption">The client sees only their price. Clean, quiet, no comparison — the number simply is what it is.</p>
+          </div>
+          <div class="pcard on">
+            <span class="state"><span class="dot"></span>Show discount · ON</span>
+            <div class="pname">Aria Lounge Sofa</div>
+            <div><span class="price-was">$4,000</span><span class="price-now">$3,000</span></div>
+            <div class="save-pill">Save 25%</div>
+            <p class="caption">Same price — now the original and the saving are shown, so the value is obvious.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 INVITES -->
+    <section id="invites">
+      <div class="sec-head">
+        <span class="sec-num">04</span>
+        <h2>Inviting a client</h2>
+      </div>
+      <p class="sec-sub">Clients never sign themselves up. We invite them by email from the CRM — that’s the only way in, so every account is one we approved.</p>
+
+      <div class="card">
+        <div class="stepper">
+          <div class="step">
+            <div class="num">1</div>
+            <h3>Admin sends invite</h3>
+            <p>Enter the client’s email in the CRM and hit invite.</p>
+          </div>
+          <div class="step">
+            <div class="num">2</div>
+            <h3>Client gets email</h3>
+            <p>A secure link lands in their inbox. Status shows <em>Pending</em>.</p>
+          </div>
+          <div class="step">
+            <div class="num">3</div>
+            <h3>They set a password</h3>
+            <p>The link lets them create their own password — we never see it.</p>
+          </div>
+          <div class="step">
+            <div class="num">4</div>
+            <h3>Account is active</h3>
+            <p>They can log in and see their pricing. Status shows <em>Active</em>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="two" style="margin-top:16px;">
+        <div class="card">
+          <h3>Forgot password</h3>
+          <p style="font-size:14.5px;margin:0;">A client can reset their own password anytime by email — no need to call us. Same secure-link approach as the invite.</p>
+        </div>
+        <div class="card">
+          <h3>What admins can see</h3>
+          <ul class="clean" style="margin-top:2px;">
+            <li>Whether an invite is still <strong>pending</strong> or the account is <strong>active</strong></li>
+            <li>When each client <strong>last logged in</strong></li>
+            <li>Which <strong>tier</strong> they’re in and every <strong>inquiry</strong> they’ve sent</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 CRM VIEW -->
+    <section id="clients">
+      <div class="sec-head">
+        <span class="sec-num">05</span>
+        <h2>The client list, at a glance</h2>
+      </div>
+      <p class="sec-sub">Everything above comes together here — who’s in, what tier they’re in, and how active they are. A sketch of what the CRM’s main screen shows.</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Tier</th>
+              <th>Status</th>
+              <th>Last login</th>
+              <th class="tabnum">Inquiries</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="name">Harbour &amp; Co. Interiors</span></td>
+              <td><span class="pill tier">Gold</span></td>
+              <td><span class="pill active">Active</span></td>
+              <td class="tabnum">Today, 9:14am</td>
+              <td class="tabnum">7</td>
+            </tr>
+            <tr>
+              <td><span class="name">Studio Wren</span></td>
+              <td><span class="pill tier">Silver</span></td>
+              <td><span class="pill active">Active</span></td>
+              <td class="tabnum">Jul 24</td>
+              <td class="tabnum">2</td>
+            </tr>
+            <tr>
+              <td><span class="name">Meridian Design Group</span></td>
+              <td><span class="pill tier">Gold</span></td>
+              <td><span class="pill pending">Pending invite</span></td>
+              <td class="tabnum">—</td>
+              <td class="tabnum">0</td>
+            </tr>
+            <tr>
+              <td><span class="name">Fieldhouse Living</span></td>
+              <td><span class="pill tier">Standard</span></td>
+              <td><span class="pill active">Active</span></td>
+              <td class="tabnum">Jul 18</td>
+              <td class="tabnum">1</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 06 INQUIRIES -->
+    <section id="inquiries">
+      <div class="sec-head">
+        <span class="sec-num">06</span>
+        <h2>Inquiries, captured</h2>
+      </div>
+      <p class="sec-sub">On MOP you don’t buy a product — you inquire about it. That stays true. We just make sure every inquiry is recorded, not only emailed.</p>
+
+      <div class="card">
+        <div class="bigpic">
+          <div class="node site">
+            <div class="role">On the website</div>
+            <h3>Client inquires about a product</h3>
+            <p style="margin:0;font-size:14px;">A logged-in partner submits an inquiry from the product they’re viewing.</p>
+          </div>
+          <div class="arrow"><span>two things happen ↓</span></div>
+          <div class="two" style="gap:14px;">
+            <div class="node">
+              <div class="role">Same as today</div>
+              <h3>Inquiry email is sent</h3>
+              <p style="margin:0;font-size:14px;">The notification email still goes out, exactly as it does now.</p>
+            </div>
+            <div class="node crm">
+              <div class="role">New</div>
+              <h3>It shows up in the CRM</h3>
+              <p style="margin:0;font-size:14px;">The inquiry is logged against that client, so we have a running history.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OPEN QUESTIONS -->
+    <section id="questions">
+      <div class="sec-head">
+        <span class="sec-num">◇</span>
+        <h2>Decisions we’ll want from the team</h2>
+      </div>
+      <p class="sec-sub">Nothing blocking — just the choices that shape the first version.</p>
+
+      <div class="card qcard">
+        <div class="qgrid">
+          <div class="q">
+            <span class="qmark">Q1</span>
+            <p><strong>What are our tiers?</strong> Names and default discounts — e.g. Standard (0%), Silver (10%), Gold (15%). We can start with a few and add more later.</p>
+          </div>
+          <div class="q">
+            <span class="qmark">Q2</span>
+            <p><strong>Who counts as an admin?</strong> You’re the first. Which teammates should also be able to invite clients and set discounts?</p>
+          </div>
+          <div class="q">
+            <span class="qmark">Q3</span>
+            <p><strong>Should the “show discount” switch be global or per-tier?</strong> One switch for the whole site, or the ability to reveal savings to some tiers but not others.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      MOP · Partner Portal &amp; CRM · High-level design · Contentful remains the source of truth for all base pricing
+    </footer>
+
+  </div>
+</div>
+</body>
+</html>
